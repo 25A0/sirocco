@@ -53,6 +53,15 @@ Prompt {
     validator      = function(text)
         return text:match("[a-zA-Z]*"), "Message when not valid"
     end,
+    -- Similar to a validator, but can transform the result
+    parser         = function(text)
+        local v = tonumber(text)
+        if not v then
+            return nil, "Cannot parse number from " .. tostring(text)
+        else
+            return v
+        end
+    end,
     -- If returns false, input will not appear at all
     filter         = function(input)
         return input:match("[a-zA-Z]*")

@@ -29,6 +29,7 @@ Prompt = Class {
         self.possibleValues      = options.possibleValues or {}
         self.showPossibleValues  = options.showPossibleValues
         self.validator           = options.validator
+        self.parser              = options.parser
         self.filter              = options.filter
 
         self.required = false
@@ -244,8 +245,9 @@ function Prompt:processInput(input)
 
     self:updateCurrentPosition()
 
-    if self.validator then
-        local _, message = self.validator(self.buffer)
+    local processor = self.parser or self.validator
+    if processor then
+        local _, message = processor(self.buffer)
         self.message = message
     end
 
@@ -366,7 +368,14 @@ function Prompt:update()
 end
 
 function Prompt:processedResult()
+  if self.parser then
+    local parsed_result, msg = self.parser(self.buffer)
+    assert(parsed_result ~= nil or not self.required,
+           "The parser cannot process the result. This should have been caught earlier.")
+    return parsed_result
+  else
     return self.buffer
+  end
 end
 
 function Prompt:endCondition()
@@ -380,9 +389,10 @@ function Prompt:endCondition()
     end
 
     -- Only validate if required or if something is in the buffer
-    if self.finished and self.validator and (self.required or Prompt.len(self.buffer) > 0) then
-        local ok, message = self.validator(self.buffer)
-        self.finished = self.finished and (ok or not self.required)
+    local processor = self.parser or self.validator
+    if self.finished and processor and (self.required or Prompt.len(self.buffer) > 0) then
+        local ok, message = processor(self.buffer)
+        self.finished = self.finished and (ok ~= nil or not self.required)
         self.message = message
     end
 
@@ -485,8 +495,9 @@ function Prompt:command_complete() -- Control-i, tab
             self.buffer = matches[1]
             self:setOffset(Prompt.len(self.buffer) + 1)
 
-            if self.validator then
-                local _, message = self.validator(self.buffer)
+            local processor = self.parser or self.validator
+            if processor then
+                local _, message = processor(self.buffer)
                 self.message = message
             end
         end
