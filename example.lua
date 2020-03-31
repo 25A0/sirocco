@@ -95,6 +95,19 @@ Prompt {
     end
 }:ask()
 
+Prompt {
+    prompt = "How many dogs did you pet today?",
+    parser = function(str)
+        local v = tonumber(str)
+        if not v then
+            return nil, "Cannot parse number from " .. tostring(str)
+        else
+            return v
+        end
+    end,
+    required = true,
+}:ask()
+
 List {
     prompt   = "How do you say 'Hello'?",
     required = true,
